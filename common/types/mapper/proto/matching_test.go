@@ -265,15 +265,15 @@ func TestToMatchingTaskListPartitionConfig(t *testing.T) {
 
 // --- Fuzz tests for matching mapper functions
 
-// taskSourceFuzzer generates valid TaskSource enum values (0: History, 1: DbBacklog).
-func taskSourceFuzzer(e *types.TaskSource, c fuzz.Continue) {
+// TaskSourceFuzzer generates valid TaskSource enum values (0: History, 1: DbBacklog).
+func TaskSourceFuzzer(e *types.TaskSource, c fuzz.Continue) {
 	*e = types.TaskSource(c.Intn(2)) // 0-1: History, DbBacklog
 }
 
-// cancelOutstandingPollRequestFuzzer ensures TaskListType *int32 only contains
+// CancelOutstandingPollRequestFuzzer ensures TaskListType *int32 only contains
 // valid values (0=Decision, 1=Activity) since out-of-range values map to nil
 // on the return path.
-func cancelOutstandingPollRequestFuzzer(r *types.CancelOutstandingPollRequest, c fuzz.Continue) {
+func CancelOutstandingPollRequestFuzzer(r *types.CancelOutstandingPollRequest, c fuzz.Continue) {
 	c.FuzzNoCustom(r)
 	if r.TaskListType != nil {
 		*r.TaskListType = int32(c.Intn(2)) // 0-1: Decision, Activity
@@ -302,22 +302,22 @@ func TestActivityTaskDispatchInfoFuzz(t *testing.T) {
 func TestMatchingAddActivityTaskRequestFuzz(t *testing.T) {
 	// ActivityTaskDispatchInfo is tested separately in TestActivityTaskDispatchInfoFuzz.
 	testutils.RunMapperFuzzTest(t, FromMatchingAddActivityTaskRequest, ToMatchingAddActivityTaskRequest,
-		testutils.WithCustomFuncs(taskSourceFuzzer),
+		testutils.WithCustomFuncs(TaskSourceFuzzer),
 		testutils.WithExcludedFields("ActivityTaskDispatchInfo"),
 	)
 }
 
 func TestMatchingAddDecisionTaskRequestFuzz(t *testing.T) {
 	testutils.RunMapperFuzzTest(t, FromMatchingAddDecisionTaskRequest, ToMatchingAddDecisionTaskRequest,
-		testutils.WithCustomFuncs(taskSourceFuzzer),
+		testutils.WithCustomFuncs(TaskSourceFuzzer),
 	)
 }
 
 func TestMatchingCancelOutstandingPollRequestFuzz(t *testing.T) {
 	// TaskListType is *int32 in types (0=Decision, 1=Activity); out-of-range values
-	// map to nil on the return path. cancelOutstandingPollRequestFuzzer constrains it.
+	// map to nil on the return path. CancelOutstandingPollRequestFuzzer constrains it.
 	testutils.RunMapperFuzzTest(t, FromMatchingCancelOutstandingPollRequest, ToMatchingCancelOutstandingPollRequest,
-		testutils.WithCustomFuncs(cancelOutstandingPollRequestFuzzer),
+		testutils.WithCustomFuncs(CancelOutstandingPollRequestFuzzer),
 	)
 }
 
@@ -386,8 +386,8 @@ func TestMatchingQueryWorkflowResponseFuzz(t *testing.T) {
 }
 
 func TestMatchingRespondQueryTaskCompletedRequestFuzz(t *testing.T) {
-	// CompletedTypeFuzzer overrides WithCommonEnumFuzzers which incorrectly generates value 2.
-	// QueryTaskCompletedType only has 2 valid values: 0=Completed, 1=Failed.
+	// QueryTaskCompletedType only has 2 valid values (0=Completed, 1=Failed);
+	// the default fuzzer generates arbitrary int values so CompletedTypeFuzzer constrains the range.
 	testutils.RunMapperFuzzTest(t, FromMatchingRespondQueryTaskCompletedRequest, ToMatchingRespondQueryTaskCompletedRequest,
 		testutils.WithCustomFuncs(CompletedTypeFuzzer),
 	)
