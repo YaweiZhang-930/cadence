@@ -665,9 +665,6 @@ func TestHistorySyncActivityRequestFuzz(t *testing.T) {
 	)
 }
 
-// Group 2: DLQ enum types — require DLQTypeFuzzer.
-// Note: These fuzz tests complement table tests in enum_test.go.
-
 func TestHistoryMergeDLQMessagesRequestFuzz(t *testing.T) {
 	testutils.RunMapperFuzzTest(t, FromHistoryMergeDLQMessagesRequest, ToHistoryMergeDLQMessagesRequest,
 		testutils.WithCustomFuncs(testutils.DLQTypeFuzzer),
@@ -689,8 +686,6 @@ func TestHistoryReadDLQMessagesRequestFuzz(t *testing.T) {
 		testutils.WithCustomFuncs(testutils.DLQTypeFuzzer),
 	)
 }
-
-// Group 3: Queue / task types — require TaskTypeFuzzer.
 
 func TestHistoryDescribeQueueRequestFuzz(t *testing.T) {
 	testutils.RunMapperFuzzTest(t, FromHistoryDescribeQueueRequest, ToHistoryDescribeQueueRequest,
@@ -760,8 +755,6 @@ func TestHistorySyncShardStatusRequestFuzz(t *testing.T) {
 	)
 }
 
-// Group 5: Types with inner-nil guard — custom fuzzers enforce non-nil inner object.
-
 func TestHistoryQueryWorkflowResponseFuzz(t *testing.T) {
 	// FromHistoryQueryWorkflowResponse returns nil when t.Response == nil, so round-trip
 	// fails for nil Response. HistoryQueryWorkflowResponseFuzzer ensures Response is always set.
@@ -786,8 +779,6 @@ func TestHistoryRefreshWorkflowTasksRequestFuzz(t *testing.T) {
 		testutils.WithCustomFuncs(HistoryRefreshWorkflowTasksRequestFuzzer),
 	)
 }
-
-// Group 6: Types with specific enum constraints.
 
 func TestHistoryStartWorkflowExecutionRequestFuzz(t *testing.T) {
 	// [BUG] StartRequest contains WorkflowIDReusePolicy (out-of-range → nil) and
