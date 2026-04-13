@@ -24,8 +24,8 @@ import (
 	"testing"
 	"time"
 
-	fuzz "github.com/google/gofuzz"
 	gogo "github.com/gogo/protobuf/types"
+	fuzz "github.com/google/gofuzz"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/uber/cadence/common/types/mapper/testutils"
