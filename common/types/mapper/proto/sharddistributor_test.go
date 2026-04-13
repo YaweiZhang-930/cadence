@@ -25,9 +25,11 @@ package proto
 import (
 	"testing"
 
+	fuzz "github.com/google/gofuzz"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/uber/cadence/common/types"
+	"github.com/uber/cadence/common/types/mapper/testutils"
 	"github.com/uber/cadence/common/types/testdata"
 )
 
@@ -65,4 +67,116 @@ func TestFromShardDistributorWatchNamespaceStateResponse(t *testing.T) {
 	for _, item := range []*types.WatchNamespaceStateResponse{nil, {}, &testdata.ShardDistributorWatchNamespaceStateResponse} {
 		assert.Equal(t, item, ToShardDistributorWatchNamespaceStateResponse(FromShardDistributorWatchNamespaceStateResponse(item)))
 	}
+}
+
+// --- Fuzz tests for sharddistributor mapper functions ---
+
+// ExecutorStatusFuzzer generates valid ExecutorStatus enum values (0-3: INVALID, ACTIVE, DRAINING, DRAINED).
+func ExecutorStatusFuzzer(e *types.ExecutorStatus, c fuzz.Continue) {
+	*e = types.ExecutorStatus(c.Intn(4)) // 0-3
+}
+
+// ShardStatusFuzzer generates valid ShardStatus enum values (0-2: INVALID, READY, DONE).
+func ShardStatusFuzzer(e *types.ShardStatus, c fuzz.Continue) {
+	*e = types.ShardStatus(c.Intn(3)) // 0-2
+}
+
+// AssignmentStatusFuzzer generates valid AssignmentStatus enum values (0-1: INVALID, READY).
+func AssignmentStatusFuzzer(e *types.AssignmentStatus, c fuzz.Continue) {
+	*e = types.AssignmentStatus(c.Intn(2)) // 0-1
+}
+
+// MigrationModeFuzzer generates valid MigrationMode enum values
+// (0-4: INVALID, LOCAL_PASSTHROUGH, LOCAL_PASSTHROUGH_SHADOW, DISTRIBUTED_PASSTHROUGH, ONBOARDED).
+func MigrationModeFuzzer(e *types.MigrationMode, c fuzz.Continue) {
+	*e = types.MigrationMode(c.Intn(5)) // 0-4
+}
+
+// ExecutorHeartbeatRequestFuzzer ensures no nil values in ShardStatusReports map.
+// Nil *ShardStatusReport map values get promoted to non-nil zero-value structs after
+// round-trip: the mapper iterates all entries unconditionally and constructs a new
+// struct via GetStatus()/GetShardLoad() (both nil-safe, returning zero values).
+// nil and &ShardStatusReport{} are semantically equivalent here; the fuzzer avoids
+// nil only to satisfy reflect.DeepEqual in the round-trip test.
+func ExecutorHeartbeatRequestFuzzer(r *types.ExecutorHeartbeatRequest, c fuzz.Continue) {
+	c.FuzzNoCustom(r)
+	for k, v := range r.ShardStatusReports {
+		if v == nil {
+			r.ShardStatusReports[k] = &types.ShardStatusReport{}
+		}
+	}
+}
+
+// ExecutorHeartbeatResponseFuzzer ensures no nil values in ShardAssignments map.
+// Nil *ShardAssignment map values get promoted to non-nil zero-value structs after
+// round-trip: the mapper iterates all entries unconditionally and constructs a new
+// struct via GetStatus() (nil-safe, returning zero value).
+// nil and &ShardAssignment{} are semantically equivalent here; the fuzzer avoids
+// nil only to satisfy reflect.DeepEqual in the round-trip test.
+func ExecutorHeartbeatResponseFuzzer(r *types.ExecutorHeartbeatResponse, c fuzz.Continue) {
+	c.FuzzNoCustom(r)
+	for k, v := range r.ShardAssignments {
+		if v == nil {
+			r.ShardAssignments[k] = &types.ShardAssignment{}
+		}
+	}
+}
+
+// WatchNamespaceStateResponseFuzzer avoids nil slices/elements: protobuf repeated
+// fields don't distinguish nil from empty, so nil round-trips to [] via make().
+func WatchNamespaceStateResponseFuzzer(r *types.WatchNamespaceStateResponse, c fuzz.Continue) {
+	c.FuzzNoCustom(r)
+	for i, executor := range r.Executors {
+		if executor == nil {
+			r.Executors[i] = &types.ExecutorShardAssignment{
+				AssignedShards: []*types.Shard{},
+			}
+		} else {
+			// nil AssignedShards becomes [] after round-trip (protobuf nil/empty equivalence).
+			if executor.AssignedShards == nil {
+				executor.AssignedShards = []*types.Shard{}
+			}
+			for j, shard := range executor.AssignedShards {
+				if shard == nil {
+					executor.AssignedShards[j] = &types.Shard{}
+				}
+			}
+		}
+	}
+}
+
+func TestGetShardOwnerRequestFuzz(t *testing.T) {
+	testutils.RunMapperFuzzTest(t, FromShardDistributorGetShardOwnerRequest, ToShardDistributorGetShardOwnerRequest)
+}
+
+func TestGetShardOwnerResponseFuzz(t *testing.T) {
+	testutils.RunMapperFuzzTest(t, FromShardDistributorGetShardOwnerResponse, ToShardDistributorGetShardOwnerResponse)
+}
+
+func TestWatchNamespaceStateRequestFuzz(t *testing.T) {
+	testutils.RunMapperFuzzTest(t, FromShardDistributorWatchNamespaceStateRequest, ToShardDistributorWatchNamespaceStateRequest)
+}
+
+func TestWatchNamespaceStateResponseFuzz(t *testing.T) {
+	// WatchNamespaceStateResponseFuzzer avoids nil slices/elements because protobuf
+	// cannot distinguish nil from empty repeated fields — both round-trip to non-nil [].
+	testutils.RunMapperFuzzTest(t, FromShardDistributorWatchNamespaceStateResponse, ToShardDistributorWatchNamespaceStateResponse,
+		testutils.WithCustomFuncs(WatchNamespaceStateResponseFuzzer),
+	)
+}
+
+func TestExecutorHeartbeatRequestFuzz(t *testing.T) {
+	// ExecutorHeartbeatRequestFuzzer avoids nil map values because the mapper constructs
+	// a new struct from nil-safe getters, so nil and &ShardStatusReport{} round-trip identically.
+	testutils.RunMapperFuzzTest(t, FromShardDistributorExecutorHeartbeatRequest, ToShardDistributorExecutorHeartbeatRequest,
+		testutils.WithCustomFuncs(ExecutorStatusFuzzer, ShardStatusFuzzer, ExecutorHeartbeatRequestFuzzer),
+	)
+}
+
+func TestExecutorHeartbeatResponseFuzz(t *testing.T) {
+	// ExecutorHeartbeatResponseFuzzer avoids nil map values because the mapper constructs
+	// a new struct from nil-safe getters, so nil and &ShardAssignment{} round-trip identically.
+	testutils.RunMapperFuzzTest(t, FromShardDistributorExecutorHeartbeatResponse, ToShardDistributorExecutorHeartbeatResponse,
+		testutils.WithCustomFuncs(AssignmentStatusFuzzer, MigrationModeFuzzer, ExecutorHeartbeatResponseFuzzer),
+	)
 }
