@@ -1517,6 +1517,8 @@ const (
 	AsyncWorkflowConsumerScope
 	// DiagnosticsWorkflowScope is scope used by diagnostics workflow
 	DiagnosticsWorkflowScope
+	// SchedulerWorkerScope is scope used by all metrics emitted by the scheduler WorkerManager
+	SchedulerWorkerScope
 
 	NumWorkerScopes
 )
@@ -2243,6 +2245,7 @@ var ScopeDefs = map[ServiceIdx]map[ScopeIdx]scopeDefinition{
 		ESAnalyzerScope:                        {operation: "ESAnalyzer"},
 		AsyncWorkflowConsumerScope:             {operation: "AsyncWorkflowConsumer"},
 		DiagnosticsWorkflowScope:               {operation: "DiagnosticsWorkflow"},
+		SchedulerWorkerScope:                   {operation: "SchedulerWorker"},
 	},
 	ShardDistributor: {
 		ShardDistributorGetShardOwnerScope:                         {operation: "GetShardOwner"},
@@ -3082,6 +3085,12 @@ const (
 	DiagnosticsWorkflowStartedCount
 	DiagnosticsWorkflowSuccess
 	DiagnosticsWorkflowExecutionLatency
+
+	// Scheduler worker metrics
+	SchedulerWorkerActiveCount     // Gauge: number of per-domain workers currently running on this host
+	SchedulerWorkerStartCount      // Counter: domain workers started
+	SchedulerWorkerStopCount       // Counter: domain workers stopped
+	SchedulerWorkerStartErrorCount // Counter: domain worker start failures
 
 	NumWorkerMetrics
 )
@@ -3942,6 +3951,13 @@ var MetricDefs = map[ServiceIdx]map[MetricIdx]metricDefinition{
 		DiagnosticsWorkflowStartedCount:               {metricName: "diagnostics_workflow_count", metricType: Counter},
 		DiagnosticsWorkflowSuccess:                    {metricName: "diagnostics_workflow_success", metricType: Counter},
 		DiagnosticsWorkflowExecutionLatency:           {metricName: "diagnostics_workflow_execution_latency", metricType: Timer},
+
+		// Scheduler worker metrics — host-level, no per-domain rollup needed
+		// (worker count is per host, not per domain; domain tag applied at call site)
+		SchedulerWorkerActiveCount:     {metricName: "scheduler_worker_active", metricType: Gauge},
+		SchedulerWorkerStartCount:      {metricName: "scheduler_worker_started", metricType: Counter},
+		SchedulerWorkerStopCount:       {metricName: "scheduler_worker_stopped", metricType: Counter},
+		SchedulerWorkerStartErrorCount: {metricName: "scheduler_worker_start_errors", metricType: Counter},
 	},
 	ShardDistributor: {
 		ShardDistributorRequests:                        {metricName: "shard_distributor_requests", metricType: Counter},
