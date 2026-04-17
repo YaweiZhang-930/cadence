@@ -33,6 +33,7 @@ import (
 	"go.uber.org/mock/gomock"
 
 	"github.com/uber/cadence/client/frontend"
+	"github.com/uber/cadence/common/metrics"
 	"github.com/uber/cadence/common/types"
 )
 
@@ -349,6 +350,7 @@ func TestProcessScheduleFireActivity(t *testing.T) {
 			} else {
 				ctx = context.WithValue(context.Background(), schedulerContextKey, schedulerContext{
 					FrontendClient: mockClient,
+					MetricsClient:  metrics.NewNoopMetricsClient(),
 				})
 			}
 
