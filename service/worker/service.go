@@ -349,6 +349,7 @@ func (s *Service) startSchedulerWorkerManager() *scheduler.WorkerManager {
 	params := &scheduler.BootstrapParams{
 		ServiceClient:      s.params.PublicClient,
 		FrontendClient:     s.GetClientBean().GetFrontendClient(),
+		MetricsClient:      s.GetMetricsClient(),
 		Logger:             s.GetLogger(),
 		DomainCache:        s.GetDomainCache(),
 		MembershipResolver: s.GetMembershipResolver(),

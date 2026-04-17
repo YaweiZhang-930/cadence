@@ -3088,18 +3088,18 @@ const (
 	DiagnosticsWorkflowExecutionLatency
 
 	// Scheduler activity metrics
-	// SchedulerFireStartedCount measures successfully started target workflows
-	SchedulerFireStartedCount
-	// SchedulerFireSkippedCount measures fires skipped due to overlap policy
-	SchedulerFireSkippedCount
-	// SchedulerFireErrorCount measures fire activity failures
-	SchedulerFireErrorCount
-	// SchedulerFireLatency measures end-to-end latency from scheduled time to StartWorkflow completion
-	SchedulerFireLatency
-	// SchedulerOverlapCancelCount measures times the CancelPrevious overlap policy was applied
-	SchedulerOverlapCancelCount
-	// SchedulerOverlapTerminateCount measures times the TerminatePrevious overlap policy was applied
-	SchedulerOverlapTerminateCount
+	// SchedulerFireStartedCountPerDomain measures successfully started target workflows; use trigger_source to differentiate schedule vs backfill rates.
+	SchedulerFireStartedCountPerDomain
+	// SchedulerFireSkippedCountPerDomain measures fires skipped due to overlap policy.
+	SchedulerFireSkippedCountPerDomain
+	// SchedulerFireErrorCountPerDomain measures fire activity failures (will be retried by SDK).
+	SchedulerFireErrorCountPerDomain
+	// SchedulerFireLatencyPerDomainHistogram measures end-to-end latency from scheduled time to StartWorkflow completion.
+	SchedulerFireLatencyPerDomainHistogram
+	// SchedulerOverlapCancelCountPerDomain measures times the CancelPrevious overlap policy was applied.
+	SchedulerOverlapCancelCountPerDomain
+	// SchedulerOverlapTerminateCountPerDomain measures times the TerminatePrevious overlap policy was applied.
+	SchedulerOverlapTerminateCountPerDomain
 
 	NumWorkerMetrics
 )
@@ -3961,12 +3961,12 @@ var MetricDefs = map[ServiceIdx]map[MetricIdx]metricDefinition{
 		DiagnosticsWorkflowStartedCount:               {metricName: "diagnostics_workflow_count", metricType: Counter},
 		DiagnosticsWorkflowSuccess:                    {metricName: "diagnostics_workflow_success", metricType: Counter},
 		DiagnosticsWorkflowExecutionLatency:           {metricName: "diagnostics_workflow_execution_latency", metricType: Timer},
-		SchedulerFireStartedCount:                     {metricName: "scheduler_fire_started_per_domain", metricType: Counter},
-		SchedulerFireSkippedCount:                     {metricName: "scheduler_fire_skipped_per_domain", metricType: Counter},
-		SchedulerFireErrorCount:                       {metricName: "scheduler_fire_error_per_domain", metricType: Counter},
-		SchedulerFireLatency:                          {metricName: "scheduler_fire_latency_per_domain_ns", metricType: Histogram, exponentialBuckets: Default1ms100s},
-		SchedulerOverlapCancelCount:                   {metricName: "scheduler_overlap_cancel_per_domain", metricType: Counter},
-		SchedulerOverlapTerminateCount:                {metricName: "scheduler_overlap_terminate_per_domain", metricType: Counter},
+		SchedulerFireStartedCountPerDomain:            {metricName: "scheduler_fire_started_per_domain", metricType: Counter},
+		SchedulerFireSkippedCountPerDomain:            {metricName: "scheduler_fire_skipped_per_domain", metricType: Counter},
+		SchedulerFireErrorCountPerDomain:              {metricName: "scheduler_fire_error_per_domain", metricType: Counter},
+		SchedulerFireLatencyPerDomainHistogram:        {metricName: "scheduler_fire_latency_per_domain_ns", metricType: Histogram, exponentialBuckets: Default1ms100s},
+		SchedulerOverlapCancelCountPerDomain:          {metricName: "scheduler_overlap_cancel_per_domain", metricType: Counter},
+		SchedulerOverlapTerminateCountPerDomain:       {metricName: "scheduler_overlap_terminate_per_domain", metricType: Counter},
 	},
 	ShardDistributor: {
 		ShardDistributorRequests:                        {metricName: "shard_distributor_requests", metricType: Counter},

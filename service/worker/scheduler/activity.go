@@ -30,6 +30,7 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/uber/cadence/client/frontend"
+	"github.com/uber/cadence/common/metrics"
 	"github.com/uber/cadence/common/types"
 )
 
@@ -45,6 +46,7 @@ const schedulerContextKey contextKey = "schedulerContext"
 // schedulerContext is the context passed to activities via BackgroundActivityContext.
 type schedulerContext struct {
 	FrontendClient frontend.Client
+	MetricsClient  metrics.Client
 }
 
 // processScheduleFireActivity is the single activity that handles a schedule fire.
@@ -53,13 +55,22 @@ type schedulerContext struct {
 // Keeping all of this in one activity means the workflow history records a single
 // activity call per fire, so the internal logic can evolve freely without
 // introducing nondeterminism.
-func processScheduleFireActivity(ctx context.Context, req ProcessFireRequest) (*ProcessFireResult, error) {
+func processScheduleFireActivity(ctx context.Context, req ProcessFireRequest) (result *ProcessFireResult, err error) {
 	sc, ok := ctx.Value(schedulerContextKey).(schedulerContext)
 	if !ok {
 		return nil, fmt.Errorf("scheduler context not found in activity context")
 	}
 
-	result := &ProcessFireResult{}
+	scope := sc.MetricsClient.Scope(metrics.SchedulerActivityScope, metrics.DomainTag(req.Domain))
+	startTime := time.Now()
+	defer func() {
+		scope.ExponentialHistogram(metrics.SchedulerFireLatencyPerDomainHistogram, time.Since(startTime))
+		if err != nil {
+			scope.IncCounter(metrics.SchedulerFireErrorCountPerDomain)
+		}
+	}()
+
+	result = &ProcessFireResult{}
 
 	policy := req.OverlapPolicy
 	if policy == types.ScheduleOverlapPolicyInvalid {
@@ -74,20 +85,24 @@ func processScheduleFireActivity(ctx context.Context, req ProcessFireRequest) (*
 		if running {
 			switch policy {
 			case types.ScheduleOverlapPolicySkipNew:
+				scope.Tagged(metrics.OverlapPolicyTag(policy.String()), metrics.TriggerSourceTag(string(req.TriggerSource))).IncCounter(metrics.SchedulerFireSkippedCountPerDomain)
 				result.SkippedDelta = 1
 				result.StartedWorkflow = req.LastStartedWorkflow
 				return result, nil
 			case types.ScheduleOverlapPolicyBuffer:
 				// TODO(overlap-buffer): implement sequential buffered execution
+				scope.Tagged(metrics.OverlapPolicyTag(policy.String()), metrics.TriggerSourceTag(string(req.TriggerSource))).IncCounter(metrics.SchedulerFireSkippedCountPerDomain)
 				result.SkippedDelta = 1
 				result.StartedWorkflow = req.LastStartedWorkflow
 				return result, nil
 			case types.ScheduleOverlapPolicyCancelPrevious:
-				if err := cancelWorkflow(ctx, sc.FrontendClient, req.Domain, req.LastStartedWorkflow); err != nil {
+				scope.IncCounter(metrics.SchedulerOverlapCancelCountPerDomain)
+				if err = cancelWorkflow(ctx, sc.FrontendClient, req.Domain, req.LastStartedWorkflow); err != nil {
 					return nil, err
 				}
 			case types.ScheduleOverlapPolicyTerminatePrevious:
-				if err := terminateWorkflow(ctx, sc.FrontendClient, req.Domain, req.LastStartedWorkflow); err != nil {
+				scope.IncCounter(metrics.SchedulerOverlapTerminateCountPerDomain)
+				if err = terminateWorkflow(ctx, sc.FrontendClient, req.Domain, req.LastStartedWorkflow); err != nil {
 					return nil, err
 				}
 			}
@@ -115,6 +130,7 @@ func processScheduleFireActivity(ctx context.Context, req ProcessFireRequest) (*
 	if err != nil {
 		var alreadyStarted *types.WorkflowExecutionAlreadyStartedError
 		if errors.As(err, &alreadyStarted) {
+			scope.Tagged(metrics.OverlapPolicyTag(policy.String()), metrics.TriggerSourceTag(string(req.TriggerSource))).IncCounter(metrics.SchedulerFireSkippedCountPerDomain)
 			result.SkippedDelta = 1
 			result.StartedWorkflow = &RunningWorkflowInfo{
 				WorkflowID: workflowID,
@@ -125,6 +141,7 @@ func processScheduleFireActivity(ctx context.Context, req ProcessFireRequest) (*
 		return nil, fmt.Errorf("failed to start workflow: %w", err)
 	}
 
+	scope.Tagged(metrics.TriggerSourceTag(string(req.TriggerSource))).IncCounter(metrics.SchedulerFireStartedCountPerDomain)
 	result.TotalDelta = 1
 	result.StartedWorkflow = &RunningWorkflowInfo{
 		WorkflowID: workflowID,

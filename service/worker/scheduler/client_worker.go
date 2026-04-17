@@ -37,6 +37,7 @@ import (
 	"github.com/uber/cadence/common/log"
 	"github.com/uber/cadence/common/log/tag"
 	"github.com/uber/cadence/common/membership"
+	"github.com/uber/cadence/common/metrics"
 	"github.com/uber/cadence/common/service"
 )
 
@@ -58,6 +59,7 @@ const (
 type BootstrapParams struct {
 	ServiceClient      workflowserviceclient.Interface
 	FrontendClient     frontend.Client
+	MetricsClient      metrics.Client
 	Logger             log.Logger
 	DomainCache        cache.DomainCache
 	MembershipResolver membership.Resolver
@@ -84,6 +86,7 @@ type WorkerManager struct {
 	enabledFn          dynamicproperties.BoolPropertyFn
 	serviceClient      workflowserviceclient.Interface
 	frontendClient     frontend.Client
+	metricsClient      metrics.Client
 	logger             log.Logger
 	domainCache        cache.DomainCache
 	membershipResolver membership.Resolver
@@ -106,6 +109,7 @@ func NewWorkerManager(params *BootstrapParams, enabledFn dynamicproperties.BoolP
 		enabledFn:          enabledFn,
 		serviceClient:      params.ServiceClient,
 		frontendClient:     params.FrontendClient,
+		metricsClient:      params.MetricsClient,
 		logger:             params.Logger.WithTags(tag.ComponentScheduler),
 		domainCache:        params.DomainCache,
 		membershipResolver: params.MembershipResolver,
@@ -277,6 +281,7 @@ func (m *WorkerManager) startWorkerForDomain(domainName string) {
 func (m *WorkerManager) defaultCreateWorker(domainName string) (workerHandle, error) {
 	actCtx := context.WithValue(context.Background(), schedulerContextKey, schedulerContext{
 		FrontendClient: m.frontendClient,
+		MetricsClient:  m.metricsClient,
 	})
 
 	w := cadenceworker.New(m.serviceClient, domainName, TaskListName, cadenceworker.Options{
