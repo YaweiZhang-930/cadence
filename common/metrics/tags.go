@@ -400,12 +400,12 @@ func ActiveClusterSelectionStrategyTag(strategy string) Tag {
 
 // OverlapPolicyTag returns a new overlap_policy tag for scheduler metrics.
 func OverlapPolicyTag(value string) Tag {
-	return simpleMetric{key: overlapPolicy, value: value}
+	return metricWithUnknown(overlapPolicy, value)
 }
 
 // TriggerSourceTag returns a new trigger_source tag for scheduler metrics.
 func TriggerSourceTag(value string) Tag {
-	return simpleMetric{key: triggerSource, value: value}
+	return metricWithUnknown(triggerSource, value)
 }
 
 // QueryConsistencyLevelTag returns a new query consistency level tag.

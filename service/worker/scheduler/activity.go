@@ -62,9 +62,10 @@ func processScheduleFireActivity(ctx context.Context, req ProcessFireRequest) (r
 	}
 
 	scope := sc.MetricsClient.Scope(metrics.SchedulerActivityScope, metrics.DomainTag(req.Domain))
-	startTime := time.Now()
 	defer func() {
-		scope.ExponentialHistogram(metrics.SchedulerFireLatencyPerDomainHistogram, time.Since(startTime))
+		if req.TriggerSource == TriggerSourceSchedule {
+			scope.ExponentialHistogram(metrics.SchedulerFireLatencyPerDomainHistogram, time.Since(req.ScheduledTime))
+		}
 		if err != nil {
 			scope.IncCounter(metrics.SchedulerFireErrorCountPerDomain)
 		}
@@ -96,14 +97,20 @@ func processScheduleFireActivity(ctx context.Context, req ProcessFireRequest) (r
 				result.StartedWorkflow = req.LastStartedWorkflow
 				return result, nil
 			case types.ScheduleOverlapPolicyCancelPrevious:
-				scope.IncCounter(metrics.SchedulerOverlapCancelCountPerDomain)
-				if err = cancelWorkflow(ctx, sc.FrontendClient, req.Domain, req.LastStartedWorkflow); err != nil {
+				var cancelled bool
+				if cancelled, err = cancelWorkflow(ctx, sc.FrontendClient, req.Domain, req.LastStartedWorkflow); err != nil {
 					return nil, err
 				}
+				if cancelled {
+					scope.IncCounter(metrics.SchedulerOverlapCancelCountPerDomain)
+				}
 			case types.ScheduleOverlapPolicyTerminatePrevious:
-				scope.IncCounter(metrics.SchedulerOverlapTerminateCountPerDomain)
-				if err = terminateWorkflow(ctx, sc.FrontendClient, req.Domain, req.LastStartedWorkflow); err != nil {
+				var terminated bool
+				if terminated, err = terminateWorkflow(ctx, sc.FrontendClient, req.Domain, req.LastStartedWorkflow); err != nil {
 					return nil, err
+				}
+				if terminated {
+					scope.IncCounter(metrics.SchedulerOverlapTerminateCountPerDomain)
 				}
 			}
 		}
@@ -193,7 +200,7 @@ func isWorkflowRunning(ctx context.Context, client frontend.Client, domain strin
 // but may continue running while it handles cleanup. A brief overlap with the
 // new run is expected. Use TERMINATE_PREVIOUS for a hard guarantee of no
 // concurrent execution.
-func cancelWorkflow(ctx context.Context, client frontend.Client, domain string, wf *RunningWorkflowInfo) error {
+func cancelWorkflow(ctx context.Context, client frontend.Client, domain string, wf *RunningWorkflowInfo) (bool, error) {
 	err := client.RequestCancelWorkflowExecution(ctx, &types.RequestCancelWorkflowExecutionRequest{
 		Domain: domain,
 		WorkflowExecution: &types.WorkflowExecution{
@@ -202,13 +209,16 @@ func cancelWorkflow(ctx context.Context, client frontend.Client, domain string, 
 		},
 		Cause: "schedule overlap policy: CANCEL_PREVIOUS",
 	})
-	if err != nil && !isEntityNotExistsError(err) {
-		return fmt.Errorf("failed to cancel workflow: %w", err)
+	if err != nil {
+		if isEntityNotExistsError(err) {
+			return false, nil
+		}
+		return false, fmt.Errorf("failed to cancel workflow: %w", err)
 	}
-	return nil
+	return true, nil
 }
 
-func terminateWorkflow(ctx context.Context, client frontend.Client, domain string, wf *RunningWorkflowInfo) error {
+func terminateWorkflow(ctx context.Context, client frontend.Client, domain string, wf *RunningWorkflowInfo) (bool, error) {
 	err := client.TerminateWorkflowExecution(ctx, &types.TerminateWorkflowExecutionRequest{
 		Domain: domain,
 		WorkflowExecution: &types.WorkflowExecution{
@@ -217,10 +227,13 @@ func terminateWorkflow(ctx context.Context, client frontend.Client, domain strin
 		},
 		Reason: "schedule overlap policy: TERMINATE_PREVIOUS",
 	})
-	if err != nil && !isEntityNotExistsError(err) {
-		return fmt.Errorf("failed to terminate workflow: %w", err)
+	if err != nil {
+		if isEntityNotExistsError(err) {
+			return false, nil
+		}
+		return false, fmt.Errorf("failed to terminate workflow: %w", err)
 	}
-	return nil
+	return true, nil
 }
 
 func buildSearchAttributes(req ProcessFireRequest) *types.SearchAttributes {
