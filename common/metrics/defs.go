@@ -3090,15 +3090,15 @@ const (
 	// Scheduler activity metrics
 	// SchedulerFireStartedCountPerDomain measures successfully started target workflows; use trigger_source to differentiate schedule vs backfill rates.
 	SchedulerFireStartedCountPerDomain
-	// SchedulerFireSkippedCountPerDomain measures fires skipped due to overlap policy.
+	// SchedulerFireSkippedCountPerDomain measures fires skipped due to overlap policy or WorkflowExecutionAlreadyStartedError.
 	SchedulerFireSkippedCountPerDomain
 	// SchedulerFireErrorCountPerDomain measures fire activity failures (will be retried by SDK).
 	SchedulerFireErrorCountPerDomain
-	// SchedulerFireLatencyPerDomainHistogram measures end-to-end latency from scheduled time to StartWorkflow completion.
+	// SchedulerFireLatencyPerDomainHistogram measures scheduler lag from cron-intended fire time to StartWorkflow completion. Schedule fires only; backfill excluded.
 	SchedulerFireLatencyPerDomainHistogram
-	// SchedulerOverlapCancelCountPerDomain measures times the CancelPrevious overlap policy was applied.
+	// SchedulerOverlapCancelCountPerDomain measures confirmed cancels under CancelPrevious policy; excludes workflows already gone.
 	SchedulerOverlapCancelCountPerDomain
-	// SchedulerOverlapTerminateCountPerDomain measures times the TerminatePrevious overlap policy was applied.
+	// SchedulerOverlapTerminateCountPerDomain measures confirmed terminates under TerminatePrevious policy; excludes workflows already gone.
 	SchedulerOverlapTerminateCountPerDomain
 
 	NumWorkerMetrics
