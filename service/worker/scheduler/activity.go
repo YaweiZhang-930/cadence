@@ -89,7 +89,7 @@ func processScheduleFireActivity(ctx context.Context, req ProcessFireRequest) (r
 				return result, nil
 			case types.ScheduleOverlapPolicyBuffer:
 				// TODO(overlap-buffer): implement sequential buffered execution
-				scope.Tagged(metrics.OverlapPolicyTag(policy.String()), metrics.TriggerSourceTag(string(req.TriggerSource))).IncCounter(metrics.SchedulerFireSkippedCountPerDomain)
+				scope.Tagged(metrics.OverlapPolicyTag(policy.String()), metrics.TriggerSourceTag(string(req.TriggerSource))).IncCounter(metrics.SchedulerFireBufferedCountPerDomain)
 				result.SkippedDelta = 1
 				result.StartedWorkflow = req.LastStartedWorkflow
 				return result, nil
@@ -134,7 +134,7 @@ func processScheduleFireActivity(ctx context.Context, req ProcessFireRequest) (r
 	if err != nil {
 		var alreadyStarted *types.WorkflowExecutionAlreadyStartedError
 		if errors.As(err, &alreadyStarted) {
-			scope.Tagged(metrics.OverlapPolicyTag(policy.String()), metrics.TriggerSourceTag(string(req.TriggerSource))).IncCounter(metrics.SchedulerFireSkippedCountPerDomain)
+			scope.Tagged(metrics.TriggerSourceTag(string(req.TriggerSource))).IncCounter(metrics.SchedulerFireAlreadyRunningCountPerDomain)
 			result.SkippedDelta = 1
 			result.StartedWorkflow = &RunningWorkflowInfo{
 				WorkflowID: workflowID,

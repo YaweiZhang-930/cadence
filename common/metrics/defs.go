@@ -3090,8 +3090,12 @@ const (
 	// Scheduler activity metrics
 	// SchedulerFireStartedCountPerDomain measures successfully started target workflows; use trigger_source to differentiate schedule vs backfill rates.
 	SchedulerFireStartedCountPerDomain
-	// SchedulerFireSkippedCountPerDomain measures fires skipped due to overlap policy or WorkflowExecutionAlreadyStartedError.
+	// SchedulerFireSkippedCountPerDomain measures fires dropped entirely under SkipNew overlap policy.
 	SchedulerFireSkippedCountPerDomain
+	// SchedulerFireBufferedCountPerDomain measures fires deferred for sequential execution under the Buffer overlap policy.
+	SchedulerFireBufferedCountPerDomain
+	// SchedulerFireAlreadyRunningCountPerDomain measures fires that lost the race between describe-check and start: a running workflow already owned the workflow ID.
+	SchedulerFireAlreadyRunningCountPerDomain
 	// SchedulerFireErrorCountPerDomain measures fire activity failures (will be retried by SDK).
 	SchedulerFireErrorCountPerDomain
 	// SchedulerFireLatencyPerDomainHistogram measures scheduler lag from cron-intended fire time to StartWorkflow completion. Schedule fires only; backfill excluded.
@@ -3963,6 +3967,8 @@ var MetricDefs = map[ServiceIdx]map[MetricIdx]metricDefinition{
 		DiagnosticsWorkflowExecutionLatency:           {metricName: "diagnostics_workflow_execution_latency", metricType: Timer},
 		SchedulerFireStartedCountPerDomain:            {metricName: "scheduler_fire_started_per_domain", metricType: Counter},
 		SchedulerFireSkippedCountPerDomain:            {metricName: "scheduler_fire_skipped_per_domain", metricType: Counter},
+		SchedulerFireBufferedCountPerDomain:           {metricName: "scheduler_fire_buffered_per_domain", metricType: Counter},
+		SchedulerFireAlreadyRunningCountPerDomain:     {metricName: "scheduler_fire_already_running_per_domain", metricType: Counter},
 		SchedulerFireErrorCountPerDomain:              {metricName: "scheduler_fire_error_per_domain", metricType: Counter},
 		SchedulerFireLatencyPerDomainHistogram:        {metricName: "scheduler_fire_latency_per_domain_ns", metricType: Histogram, exponentialBuckets: Default1ms100s},
 		SchedulerOverlapCancelCountPerDomain:          {metricName: "scheduler_overlap_cancel_per_domain", metricType: Counter},
