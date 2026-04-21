@@ -34,6 +34,7 @@ import (
 	"github.com/uber/cadence/common/dynamicconfig/dynamicproperties"
 	"github.com/uber/cadence/common/log/testlogger"
 	"github.com/uber/cadence/common/membership"
+	"github.com/uber/cadence/common/metrics"
 	"github.com/uber/cadence/common/persistence"
 	"github.com/uber/cadence/common/service"
 )
@@ -175,6 +176,7 @@ func TestRefreshWorkers(t *testing.T) {
 			wm := &WorkerManager{
 				enabledFn:          dynamicproperties.GetBoolPropertyFnFilteredByDomain(true),
 				logger:             testlogger.New(t),
+				metricsClient:      metrics.NewNoopMetricsClient(),
 				domainCache:        mockDomainCache,
 				membershipResolver: mockResolver,
 				hostInfo:           selfHost,
@@ -240,6 +242,7 @@ func TestRefreshWorkers_StopsWorkerWhenDomainDisabled(t *testing.T) {
 	wm := &WorkerManager{
 		enabledFn:          func(domain string) bool { return false },
 		logger:             testlogger.New(t),
+		metricsClient:      metrics.NewNoopMetricsClient(),
 		domainCache:        mockDomainCache,
 		membershipResolver: mockResolver,
 		hostInfo:           selfHost,
@@ -282,6 +285,7 @@ func TestRefreshWorkersHandlesCreateWorkerError(t *testing.T) {
 	wm := &WorkerManager{
 		enabledFn:          dynamicproperties.GetBoolPropertyFnFilteredByDomain(true),
 		logger:             testlogger.New(t),
+		metricsClient:      metrics.NewNoopMetricsClient(),
 		domainCache:        mockDomainCache,
 		membershipResolver: mockResolver,
 		hostInfo:           selfHost,
@@ -361,6 +365,7 @@ func TestMembershipChangeTriggersRefresh(t *testing.T) {
 		DomainCache:        mockDomainCache,
 		MembershipResolver: mockResolver,
 		HostInfo:           selfHost,
+		MetricsClient:      metrics.NewNoopMetricsClient(),
 	}, dynamicproperties.GetBoolPropertyFnFilteredByDomain(true))
 
 	wm.createWorker = func(domainName string) (workerHandle, error) {

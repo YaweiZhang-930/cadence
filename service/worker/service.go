@@ -351,6 +351,7 @@ func (s *Service) startSchedulerWorkerManager() *scheduler.WorkerManager {
 		DomainCache:        s.GetDomainCache(),
 		MembershipResolver: s.GetMembershipResolver(),
 		HostInfo:           s.GetHostInfo(),
+		MetricsClient:      s.GetMetricsClient(),
 	}
 	wm := scheduler.NewWorkerManager(params, s.config.EnableScheduler)
 	wm.Start()
