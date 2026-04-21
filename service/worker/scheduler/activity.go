@@ -63,9 +63,6 @@ func processScheduleFireActivity(ctx context.Context, req ProcessFireRequest) (r
 
 	scope := sc.MetricsClient.Scope(metrics.SchedulerActivityScope, metrics.DomainTag(req.Domain))
 	defer func() {
-		if req.TriggerSource == TriggerSourceSchedule {
-			scope.ExponentialHistogram(metrics.SchedulerFireLatencyPerDomainHistogram, time.Since(req.ScheduledTime))
-		}
 		if err != nil {
 			scope.IncCounter(metrics.SchedulerFireErrorCountPerDomain)
 		}
@@ -148,7 +145,11 @@ func processScheduleFireActivity(ctx context.Context, req ProcessFireRequest) (r
 		return nil, fmt.Errorf("failed to start workflow: %w", err)
 	}
 
-	scope.Tagged(metrics.TriggerSourceTag(string(req.TriggerSource))).IncCounter(metrics.SchedulerFireStartedCountPerDomain)
+	startedScope := scope.Tagged(metrics.TriggerSourceTag(string(req.TriggerSource)))
+	startedScope.IncCounter(metrics.SchedulerFireStartedCountPerDomain)
+	if req.TriggerSource == TriggerSourceSchedule {
+		startedScope.ExponentialHistogram(metrics.SchedulerFireLatencyPerDomainHistogram, time.Since(req.ScheduledTime))
+	}
 	result.TotalDelta = 1
 	result.StartedWorkflow = &RunningWorkflowInfo{
 		WorkflowID: workflowID,
