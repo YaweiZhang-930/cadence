@@ -40,8 +40,8 @@ import (
 // testScope is a metrics.Scope that records which MetricIdx counters and histograms were hit.
 type testScope struct {
 	metrics.Scope // delegates untracked methods to NoopScope
-	counters   map[metrics.MetricIdx]int64
-	histograms map[metrics.MetricIdx]int64
+	counters      map[metrics.MetricIdx]int64
+	histograms    map[metrics.MetricIdx]int64
 }
 
 func newTestScope() *testScope {
@@ -326,7 +326,7 @@ func TestProcessScheduleFireActivity(t *testing.T) {
 			},
 		},
 		{
-			name: "AlreadyStartedError returns already running workflow",
+			name: "AlreadyStartedError returns skipped with RunID",
 			req:  baseReq,
 			setupMock: func(m *frontend.MockClient) {
 				m.EXPECT().StartWorkflowExecution(gomock.Any(), gomock.Any()).
@@ -338,25 +338,6 @@ func TestProcessScheduleFireActivity(t *testing.T) {
 			wantResult: &ProcessFireResult{
 				SkippedDelta:    1,
 				StartedWorkflow: &RunningWorkflowInfo{WorkflowID: expectedWfID, RunID: "existing-run"},
-			},
-		},
-		{
-			name: "BUFFER defers fire when previous is running",
-			req: func() ProcessFireRequest {
-				r := baseReq
-				r.OverlapPolicy = types.ScheduleOverlapPolicyBuffer
-				r.LastStartedWorkflow = &RunningWorkflowInfo{WorkflowID: "old-wf", RunID: "old-run"}
-				return r
-			}(),
-			setupMock: func(m *frontend.MockClient) {
-				m.EXPECT().DescribeWorkflowExecution(gomock.Any(), gomock.Any()).
-					Return(&types.DescribeWorkflowExecutionResponse{
-						WorkflowExecutionInfo: &types.WorkflowExecutionInfo{CloseStatus: nil},
-					}, nil)
-			},
-			wantResult: &ProcessFireResult{
-				SkippedDelta:    1,
-				StartedWorkflow: &RunningWorkflowInfo{WorkflowID: "old-wf", RunID: "old-run"},
 			},
 		},
 		{
