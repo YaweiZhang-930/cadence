@@ -3125,6 +3125,9 @@ const (
 	SchedulerWorkerRefreshLatencyHistogram
 	// SchedulerWorkerLookupFailuresCount counts LookupN failures during refresh; ownership decision skipped (host-level)
 	SchedulerWorkerLookupFailuresCount
+	// SchedulerWorkerDomainCoverageCount is incremented every refresh cycle for each domain with an active worker on this host;
+	// rate dropping to zero for a domain means no host is covering it (per-domain)
+	SchedulerWorkerDomainCoverageCount
 
 	NumWorkerMetrics
 )
@@ -4016,6 +4019,7 @@ var MetricDefs = map[ServiceIdx]map[MetricIdx]metricDefinition{
 		SchedulerWorkerStartErrorsCountPerDomain:      {metricName: "scheduler_worker_start_errors_count_per_domain", metricType: Counter},
 		SchedulerWorkerRefreshLatencyHistogram:        {metricName: "scheduler_worker_refresh_latency_ns", metricType: Histogram, exponentialBuckets: Default1ms100s},
 		SchedulerWorkerLookupFailuresCount:            {metricName: "scheduler_worker_lookup_failures_count", metricType: Counter},
+		SchedulerWorkerDomainCoverageCount:            {metricName: "scheduler_worker_domain_coverage_count", metricType: Counter},
 	},
 	ShardDistributor: {
 		ShardDistributorRequests:                        {metricName: "shard_distributor_requests", metricType: Counter},

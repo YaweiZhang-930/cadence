@@ -473,6 +473,44 @@ func TestRefreshWorkersMetrics(t *testing.T) {
 				assertCounter(t, snap, "scheduler_worker_start_errors_count_per_domain", map[string]string{"domain": "domain-a"}, 1)
 			},
 		},
+		{
+			name: "domain coverage counter incremented for each active worker",
+			domains: map[string]*cache.DomainCacheEntry{
+				"domain-a": makeDomainEntry("domain-a"),
+				"domain-b": makeDomainEntry("domain-b"),
+			},
+			lookupNResults: map[string][]membership.HostInfo{
+				"domain-a": {selfHost, otherHost},
+				"domain-b": {otherHost},
+			},
+			existingWorkers: []string{"domain-a"},
+			assertMetrics: func(t *testing.T, snap tally.Snapshot) {
+				assertCounter(t, snap, "scheduler_worker_domain_coverage_count", map[string]string{"domain": "domain-a"}, 1)
+				// domain-b is not owned by this host, so no coverage counter
+				for _, c := range snap.Counters() {
+					if c.Name() == "scheduler_worker_domain_coverage_count" && c.Tags()["domain"] == "domain-b" {
+						t.Errorf("unexpected domain coverage counter for domain-b")
+					}
+				}
+			},
+		},
+		{
+			name: "domain coverage counter skipped for lookup-failed domains",
+			domains: map[string]*cache.DomainCacheEntry{
+				"domain-a": makeDomainEntry("domain-a"),
+			},
+			lookupNErrors: map[string]error{
+				"domain-a": fmt.Errorf("ring not ready"),
+			},
+			existingWorkers: []string{"domain-a"},
+			assertMetrics: func(t *testing.T, snap tally.Snapshot) {
+				for _, c := range snap.Counters() {
+					if c.Name() == "scheduler_worker_domain_coverage_count" {
+						t.Errorf("domain coverage counter should not be emitted when lookup fails")
+					}
+				}
+			},
+		},
 	}
 
 	for _, tc := range tests {

@@ -233,6 +233,7 @@ func (m *WorkerManager) refreshWorkers() {
 
 	for domainName, w := range m.activeWorkers {
 		if _, owned := ownedDomains[domainName]; owned {
+			scope.Tagged(metrics.DomainTag(domainName)).IncCounter(metrics.SchedulerWorkerDomainCoverageCount)
 			continue
 		}
 		// Keep workers running for domains where lookup failed to avoid
