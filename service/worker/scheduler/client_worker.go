@@ -275,6 +275,7 @@ func (m *WorkerManager) startWorkerForDomain(scope metrics.Scope, domainName str
 func (m *WorkerManager) defaultCreateWorker(domainName string) (workerHandle, error) {
 	actCtx := context.WithValue(context.Background(), schedulerContextKey, schedulerContext{
 		FrontendClient: m.frontendClient,
+		MetricsClient:  m.metricsClient,
 	})
 
 	w := cadenceworker.New(m.serviceClient, domainName, TaskListName, cadenceworker.Options{
