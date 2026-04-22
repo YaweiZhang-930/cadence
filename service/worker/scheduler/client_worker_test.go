@@ -430,21 +430,9 @@ func TestRefreshWorkersMetrics(t *testing.T) {
 				"domain-b": {selfHost, otherHost},
 			},
 			assertMetrics: func(t *testing.T, snap tally.Snapshot) {
-				require.Contains(t, snap.Counters(), "scheduler_worker_started+operation=SchedulerWorker")
-				assert.EqualValues(t, 2, snap.Counters()["scheduler_worker_started+operation=SchedulerWorker"].Value())
-
-				require.Contains(t, snap.Gauges(), "scheduler_worker_active+operation=SchedulerWorker")
-				assert.EqualValues(t, 2, snap.Gauges()["scheduler_worker_active+operation=SchedulerWorker"].Value())
-
-				// use .Name() since the histogram map key includes bucket config tags
-				found := false
-				for _, h := range snap.Histograms() {
-					if h.Name() == "scheduler_worker_refresh_latency_ns" {
-						found = true
-						break
-					}
-				}
-				assert.True(t, found, "scheduler_worker_refresh_latency_ns histogram not recorded")
+				assertCounter(t, snap, "scheduler_worker_started", nil, 2)
+				assertGauge(t, snap, "scheduler_worker_active", nil, 2)
+				assertHistogramRecorded(t, snap, "scheduler_worker_refresh_latency_ns")
 			},
 		},
 		{
@@ -457,8 +445,7 @@ func TestRefreshWorkersMetrics(t *testing.T) {
 			},
 			existingWorkers: []string{"domain-a"},
 			assertMetrics: func(t *testing.T, snap tally.Snapshot) {
-				require.Contains(t, snap.Counters(), "scheduler_worker_stopped+operation=SchedulerWorker")
-				assert.EqualValues(t, 1, snap.Counters()["scheduler_worker_stopped+operation=SchedulerWorker"].Value())
+				assertCounter(t, snap, "scheduler_worker_stopped", nil, 1)
 			},
 		},
 		{
@@ -470,8 +457,7 @@ func TestRefreshWorkersMetrics(t *testing.T) {
 				"domain-a": fmt.Errorf("ring not ready"),
 			},
 			assertMetrics: func(t *testing.T, snap tally.Snapshot) {
-				require.Contains(t, snap.Counters(), "scheduler_worker_lookup_failures+operation=SchedulerWorker")
-				assert.EqualValues(t, 1, snap.Counters()["scheduler_worker_lookup_failures+operation=SchedulerWorker"].Value())
+				assertCounter(t, snap, "scheduler_worker_lookup_failures", nil, 1)
 			},
 		},
 		{
@@ -484,9 +470,7 @@ func TestRefreshWorkersMetrics(t *testing.T) {
 			},
 			workerStartErr: fmt.Errorf("connection refused"),
 			assertMetrics: func(t *testing.T, snap tally.Snapshot) {
-				const key = "scheduler_worker_start_errors_per_domain+domain=domain-a,operation=SchedulerWorker"
-				require.Contains(t, snap.Counters(), key)
-				assert.EqualValues(t, 1, snap.Counters()[key].Value())
+				assertCounter(t, snap, "scheduler_worker_start_errors_per_domain", map[string]string{"domain": "domain-a"}, 1)
 			},
 		},
 	}
@@ -535,6 +519,47 @@ func TestRefreshWorkersMetrics(t *testing.T) {
 			tc.assertMetrics(t, ts.Snapshot())
 		})
 	}
+}
+
+func assertCounter(t *testing.T, snap tally.Snapshot, name string, tags map[string]string, want int64) {
+	t.Helper()
+	for _, c := range snap.Counters() {
+		if c.Name() == name && tagsMatch(c.Tags(), tags) {
+			assert.EqualValues(t, want, c.Value())
+			return
+		}
+	}
+	t.Errorf("counter %q with tags %v not found in snapshot", name, tags)
+}
+
+func assertGauge(t *testing.T, snap tally.Snapshot, name string, tags map[string]string, want float64) {
+	t.Helper()
+	for _, g := range snap.Gauges() {
+		if g.Name() == name && tagsMatch(g.Tags(), tags) {
+			assert.EqualValues(t, want, g.Value())
+			return
+		}
+	}
+	t.Errorf("gauge %q with tags %v not found in snapshot", name, tags)
+}
+
+func assertHistogramRecorded(t *testing.T, snap tally.Snapshot, name string) {
+	t.Helper()
+	for _, h := range snap.Histograms() {
+		if h.Name() == name {
+			return
+		}
+	}
+	t.Errorf("histogram %q not found in snapshot", name)
+}
+
+func tagsMatch(actual, want map[string]string) bool {
+	for k, v := range want {
+		if actual[k] != v {
+			return false
+		}
+	}
+	return true
 }
 
 type fakeWorker struct {
