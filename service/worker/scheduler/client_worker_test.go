@@ -431,7 +431,7 @@ func TestRefreshWorkersMetrics(t *testing.T) {
 			},
 			assertMetrics: func(t *testing.T, snap tally.Snapshot) {
 				assertCounter(t, snap, "scheduler_worker_started_count", nil, 2)
-				assertGauge(t, snap, "scheduler_worker_active", nil, 2)
+				assertGauge(t, snap, "scheduler_worker_active_gauge", nil, 2)
 				assertHistogramRecorded(t, snap, "scheduler_worker_refresh_latency_ns")
 			},
 		},

@@ -4010,7 +4010,7 @@ var MetricDefs = map[ServiceIdx]map[MetricIdx]metricDefinition{
 		DiagnosticsWorkflowStartedCount:               {metricName: "diagnostics_workflow_count", metricType: Counter},
 		DiagnosticsWorkflowSuccess:                    {metricName: "diagnostics_workflow_success", metricType: Counter},
 		DiagnosticsWorkflowExecutionLatency:           {metricName: "diagnostics_workflow_execution_latency", metricType: Timer},
-		SchedulerWorkerActiveGauge:                    {metricName: "scheduler_worker_active", metricType: Gauge},
+		SchedulerWorkerActiveGauge:                    {metricName: "scheduler_worker_active_gauge", metricType: Gauge},
 		SchedulerWorkerStartedCount:                   {metricName: "scheduler_worker_started_count", metricType: Counter},
 		SchedulerWorkerStoppedCount:                   {metricName: "scheduler_worker_stopped_count", metricType: Counter},
 		SchedulerWorkerStartErrorsCountPerDomain:      {metricName: "scheduler_worker_start_errors_count_per_domain", metricType: Counter},
