@@ -3115,16 +3115,16 @@ const (
 	// Scheduler worker metrics
 	// SchedulerWorkerActiveGauge is the number of per-domain workers running on this host (host-level)
 	SchedulerWorkerActiveGauge
-	// SchedulerWorkerStarted counts domain workers started on this host (host-level)
-	SchedulerWorkerStarted
-	// SchedulerWorkerStopped counts domain workers stopped on this host (host-level)
-	SchedulerWorkerStopped
-	// SchedulerWorkerStartErrorsPerDomain counts worker start failures; domain-tagged to surface per-domain recurring failures
-	SchedulerWorkerStartErrorsPerDomain
+	// SchedulerWorkerStartedCount counts domain workers started on this host (host-level)
+	SchedulerWorkerStartedCount
+	// SchedulerWorkerStoppedCount counts domain workers stopped on this host (host-level)
+	SchedulerWorkerStoppedCount
+	// SchedulerWorkerStartErrorsCountPerDomain counts worker start failures; domain-tagged to surface per-domain recurring failures
+	SchedulerWorkerStartErrorsCountPerDomain
 	// SchedulerWorkerRefreshLatencyHistogram measures end-to-end duration of one refreshWorkers() call (host-level)
 	SchedulerWorkerRefreshLatencyHistogram
-	// SchedulerWorkerLookupFailures counts LookupN failures during refresh; ownership decision skipped (host-level)
-	SchedulerWorkerLookupFailures
+	// SchedulerWorkerLookupFailuresCount counts LookupN failures during refresh; ownership decision skipped (host-level)
+	SchedulerWorkerLookupFailuresCount
 
 	NumWorkerMetrics
 )
@@ -4011,11 +4011,11 @@ var MetricDefs = map[ServiceIdx]map[MetricIdx]metricDefinition{
 		DiagnosticsWorkflowSuccess:                    {metricName: "diagnostics_workflow_success", metricType: Counter},
 		DiagnosticsWorkflowExecutionLatency:           {metricName: "diagnostics_workflow_execution_latency", metricType: Timer},
 		SchedulerWorkerActiveGauge:                    {metricName: "scheduler_worker_active", metricType: Gauge},
-		SchedulerWorkerStarted:                        {metricName: "scheduler_worker_started", metricType: Counter},
-		SchedulerWorkerStopped:                        {metricName: "scheduler_worker_stopped", metricType: Counter},
-		SchedulerWorkerStartErrorsPerDomain:           {metricName: "scheduler_worker_start_errors_per_domain", metricType: Counter},
+		SchedulerWorkerStartedCount:                   {metricName: "scheduler_worker_started_count", metricType: Counter},
+		SchedulerWorkerStoppedCount:                   {metricName: "scheduler_worker_stopped_count", metricType: Counter},
+		SchedulerWorkerStartErrorsCountPerDomain:      {metricName: "scheduler_worker_start_errors_count_per_domain", metricType: Counter},
 		SchedulerWorkerRefreshLatencyHistogram:        {metricName: "scheduler_worker_refresh_latency_ns", metricType: Histogram, exponentialBuckets: Default1ms100s},
-		SchedulerWorkerLookupFailures:                 {metricName: "scheduler_worker_lookup_failures", metricType: Counter},
+		SchedulerWorkerLookupFailuresCount:            {metricName: "scheduler_worker_lookup_failures_count", metricType: Counter},
 	},
 	ShardDistributor: {
 		ShardDistributorRequests:                        {metricName: "shard_distributor_requests", metricType: Counter},

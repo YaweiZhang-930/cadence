@@ -430,7 +430,7 @@ func TestRefreshWorkersMetrics(t *testing.T) {
 				"domain-b": {selfHost, otherHost},
 			},
 			assertMetrics: func(t *testing.T, snap tally.Snapshot) {
-				assertCounter(t, snap, "scheduler_worker_started", nil, 2)
+				assertCounter(t, snap, "scheduler_worker_started_count", nil, 2)
 				assertGauge(t, snap, "scheduler_worker_active", nil, 2)
 				assertHistogramRecorded(t, snap, "scheduler_worker_refresh_latency_ns")
 			},
@@ -445,7 +445,7 @@ func TestRefreshWorkersMetrics(t *testing.T) {
 			},
 			existingWorkers: []string{"domain-a"},
 			assertMetrics: func(t *testing.T, snap tally.Snapshot) {
-				assertCounter(t, snap, "scheduler_worker_stopped", nil, 1)
+				assertCounter(t, snap, "scheduler_worker_stopped_count", nil, 1)
 			},
 		},
 		{
@@ -457,7 +457,7 @@ func TestRefreshWorkersMetrics(t *testing.T) {
 				"domain-a": fmt.Errorf("ring not ready"),
 			},
 			assertMetrics: func(t *testing.T, snap tally.Snapshot) {
-				assertCounter(t, snap, "scheduler_worker_lookup_failures", nil, 1)
+				assertCounter(t, snap, "scheduler_worker_lookup_failures_count", nil, 1)
 			},
 		},
 		{
@@ -470,7 +470,7 @@ func TestRefreshWorkersMetrics(t *testing.T) {
 			},
 			workerStartErr: fmt.Errorf("connection refused"),
 			assertMetrics: func(t *testing.T, snap tally.Snapshot) {
-				assertCounter(t, snap, "scheduler_worker_start_errors_per_domain", map[string]string{"domain": "domain-a"}, 1)
+				assertCounter(t, snap, "scheduler_worker_start_errors_count_per_domain", map[string]string{"domain": "domain-a"}, 1)
 			},
 		},
 	}

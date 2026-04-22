@@ -209,7 +209,7 @@ func (m *WorkerManager) refreshWorkers() {
 				tag.WorkflowDomainName(domainName),
 				tag.Error(err),
 			)
-			scope.IncCounter(metrics.SchedulerWorkerLookupFailures)
+			scope.IncCounter(metrics.SchedulerWorkerLookupFailuresCount)
 			lookupFailed[domainName] = struct{}{}
 			continue
 		}
@@ -244,7 +244,7 @@ func (m *WorkerManager) refreshWorkers() {
 			tag.WorkflowDomainName(domainName),
 		)
 		w.Stop()
-		scope.IncCounter(metrics.SchedulerWorkerStopped)
+		scope.IncCounter(metrics.SchedulerWorkerStoppedCount)
 		delete(m.activeWorkers, domainName)
 	}
 
@@ -260,12 +260,12 @@ func (m *WorkerManager) startWorkerForDomain(scope metrics.Scope, domainName str
 			tag.WorkflowDomainName(domainName),
 			tag.Error(err),
 		)
-		scope.Tagged(metrics.DomainTag(domainName)).IncCounter(metrics.SchedulerWorkerStartErrorsPerDomain)
+		scope.Tagged(metrics.DomainTag(domainName)).IncCounter(metrics.SchedulerWorkerStartErrorsCountPerDomain)
 		return
 	}
 
 	m.activeWorkers[domainName] = w
-	scope.IncCounter(metrics.SchedulerWorkerStarted)
+	scope.IncCounter(metrics.SchedulerWorkerStartedCount)
 	m.logger.Info("started scheduler worker for domain",
 		tag.WorkflowDomainName(domainName),
 	)
