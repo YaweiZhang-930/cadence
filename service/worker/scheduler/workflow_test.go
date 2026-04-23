@@ -770,9 +770,11 @@ func TestProcessBackfillsRespectsPause(t *testing.T) {
 		},
 	}
 	// processBackfills should short-circuit without touching PendingBackfills
-	moreWork := processBackfills(nil, testLogger, tally.NoopScope, sched, input, state)
+	scope := tally.NewTestScope("", nil)
+	moreWork := processBackfills(nil, testLogger, scope, sched, input, state)
 	assert.False(t, moreWork, "paused schedule should not process backfills")
 	assert.Len(t, state.PendingBackfills, 1, "pending backfills should be preserved while paused")
+	assert.Empty(t, scope.Snapshot().Counters(), "no metrics should be emitted when paused")
 }
 
 func TestBackfillFireComputation(t *testing.T) {
