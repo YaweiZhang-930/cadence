@@ -38,6 +38,19 @@ const (
 
 	QueryTypeDescribe = "scheduler-describe"
 
+	// ContinueAsNew reason tag values for scheduler_continue_as_new_count metric.
+	continueAsNewReasonMissedRun    = "missed_run"
+	continueAsNewReasonBackfill     = "back_fill"
+	continueAsNewReasonSignal       = "signal"
+	continueAsNewReasonIterationCap = "iteration_cap"
+
+	// signal_type tag values for scheduler_signal_received_count metric.
+	signalTypeTagPause    = "pause"
+	signalTypeTagUnpause  = "unpause"
+	signalTypeTagUpdate   = "update"
+	signalTypeTagBackfill = "backfill"
+	signalTypeTagDelete   = "delete"
+
 	// Search attribute keys set on target workflows started by the scheduler.
 	SearchAttrScheduleID   = "CadenceScheduleID"
 	SearchAttrScheduleTime = "CadenceScheduleTime"

@@ -27,6 +27,7 @@ import (
 	"github.com/robfig/cron/v3"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/uber-go/tally"
 	"go.uber.org/zap"
 
 	"github.com/uber/cadence/common/types"
@@ -769,7 +770,7 @@ func TestProcessBackfillsRespectsPause(t *testing.T) {
 		},
 	}
 	// processBackfills should short-circuit without touching PendingBackfills
-	moreWork := processBackfills(nil, testLogger, sched, input, state)
+	moreWork := processBackfills(nil, testLogger, tally.NoopScope, sched, input, state)
 	assert.False(t, moreWork, "paused schedule should not process backfills")
 	assert.Len(t, state.PendingBackfills, 1, "pending backfills should be preserved while paused")
 }

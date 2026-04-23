@@ -1521,6 +1521,8 @@ const (
 	SchedulerWorkerScope
 	// SchedulerActivityScope is scope used by the scheduler fire activity
 	SchedulerActivityScope
+	// SchedulerWorkflowScope is scope used by the scheduler workflow
+	SchedulerWorkflowScope
 
 	NumWorkerScopes
 )
@@ -2252,6 +2254,7 @@ var ScopeDefs = map[ServiceIdx]map[ScopeIdx]scopeDefinition{
 		DiagnosticsWorkflowScope:               {operation: "DiagnosticsWorkflow"},
 		SchedulerWorkerScope:                   {operation: "SchedulerWorker"},
 		SchedulerActivityScope:                 {operation: "SchedulerActivity"},
+		SchedulerWorkflowScope:                 {operation: "SchedulerWorkflow"},
 	},
 	ShardDistributor: {
 		ShardDistributorGetShardOwnerScope:                         {operation: "GetShardOwner"},
@@ -3153,6 +3156,18 @@ const (
 	SchedulerOverlapCancelCountPerDomain
 	// SchedulerOverlapTerminateCountPerDomain measures confirmed terminates under TerminatePrevious policy; excludes workflows already gone.
 	SchedulerOverlapTerminateCountPerDomain
+
+	// Scheduler workflow metrics (emitted via workflow.GetMetricsScope)
+	// SchedulerSignalReceivedCount counts signals received by the scheduler workflow; tagged with signal_type (pause/unpause/update/backfill/delete).
+	SchedulerSignalReceivedCount
+	// SchedulerMissedFiredCount counts missed fires actually executed during catch-up.
+	SchedulerMissedFiredCount
+	// SchedulerMissedSkippedCount counts missed fires skipped by catch-up policy; tagged with catch_up_policy.
+	SchedulerMissedSkippedCount
+	// SchedulerBackfillFiredCount counts fires executed from backfill requests.
+	SchedulerBackfillFiredCount
+	// SchedulerContinueAsNewCount counts ContinueAsNew events; tagged with reason (missed_run/back_fill/signal/iteration_cap).
+	SchedulerContinueAsNewCount
 
 	NumWorkerMetrics
 )
@@ -4059,6 +4074,11 @@ var MetricDefs = map[ServiceIdx]map[MetricIdx]metricDefinition{
 		SchedulerFireLatencyPerDomainHistogram:        {metricName: "scheduler_fire_latency_per_domain_ns", metricType: Histogram, exponentialBuckets: Default1ms100s},
 		SchedulerOverlapCancelCountPerDomain:          {metricName: "scheduler_overlap_cancel_per_domain", metricType: Counter},
 		SchedulerOverlapTerminateCountPerDomain:       {metricName: "scheduler_overlap_terminate_per_domain", metricType: Counter},
+		SchedulerSignalReceivedCount:                  {metricName: "scheduler_signal_received_count", metricType: Counter},
+		SchedulerMissedFiredCount:                     {metricName: "scheduler_missed_fired_count", metricType: Counter},
+		SchedulerMissedSkippedCount:                   {metricName: "scheduler_missed_skipped_count", metricType: Counter},
+		SchedulerBackfillFiredCount:                   {metricName: "scheduler_backfill_fired_count", metricType: Counter},
+		SchedulerContinueAsNewCount:                   {metricName: "scheduler_continue_as_new_count", metricType: Counter},
 	},
 	ShardDistributor: {
 		ShardDistributorRequests:                        {metricName: "shard_distributor_requests", metricType: Counter},
