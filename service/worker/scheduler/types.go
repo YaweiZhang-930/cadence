@@ -38,11 +38,23 @@ const (
 
 	QueryTypeDescribe = "scheduler-describe"
 
+	// Metric name strings emitted via tally.Scope (workflow.GetMetricsScope).
+	SchedulerSignalReceivedCount = "scheduler_signal_received_count"
+	SchedulerMissedFiredCount    = "scheduler_missed_fired_count"
+	SchedulerMissedSkippedCount  = "scheduler_missed_skipped_count"
+	SchedulerBackfillFiredCount  = "scheduler_backfill_fired_count"
+	SchedulerContinueAsNewCount  = "scheduler_continue_as_new_count"
+
+	// Tag key strings for scheduler workflow metrics.
+	SignalTypeTag    = "signal_type"
+	CatchUpPolicyTag = "catch_up_policy"
+	ReasonTag        = "reason"
+
 	// ContinueAsNew reason tag values for scheduler_continue_as_new_count metric.
-	continueAsNewReasonMissedRun    = "missed_run"
-	continueAsNewReasonBackfill     = "back_fill"
-	continueAsNewReasonSignal       = "signal"
-	continueAsNewReasonIterationCap = "iteration_cap"
+	ContinueAsNewReasonMissedRun    = "missed_run"
+	ContinueAsNewReasonBackfill     = "back_fill"
+	ContinueAsNewReasonSignal       = "signal"
+	ContinueAsNewReasonIterationCap = "iteration_cap"
 
 	// signal_type tag values for scheduler_signal_received_count metric.
 	signalTypeTagPause    = "pause"
