@@ -39,11 +39,11 @@ const (
 	QueryTypeDescribe = "scheduler-describe"
 
 	// Metric name strings emitted via tally.Scope (workflow.GetMetricsScope).
-	SchedulerSignalReceivedCount = "scheduler_signal_received_count"
-	SchedulerMissedFiredCount    = "scheduler_missed_fired_count"
-	SchedulerMissedSkippedCount  = "scheduler_missed_skipped_count"
-	SchedulerBackfillFiredCount  = "scheduler_backfill_fired_count"
-	SchedulerContinueAsNewCount  = "scheduler_continue_as_new_count"
+	SchedulerSignalReceivedCountPerDomain = "scheduler_signal_received_count_per_domain"
+	SchedulerMissedFiredCountPerDomain    = "scheduler_missed_fired_count_per_domain"
+	SchedulerMissedSkippedCountPerDomain  = "scheduler_missed_skipped_count_per_domain"
+	SchedulerBackfillFiredCountPerDomain  = "scheduler_backfill_fired_count_per_domain"
+	SchedulerContinueAsNewCountPerDomain  = "scheduler_continue_as_new_count_per_domain"
 
 	// Tag key strings for scheduler workflow metrics.
 	SignalTypeTag    = "signal_type"

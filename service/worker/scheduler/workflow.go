@@ -180,7 +180,7 @@ func applyAllInputs(
 	selector.AddReceive(chs.pause, func(c workflow.Channel, more bool) {
 		var sig PauseSignal
 		c.Receive(ctx, &sig)
-		scope.Tagged(map[string]string{SignalTypeTag: signalTypeTagPause}).Counter(SchedulerSignalReceivedCount).Inc(1)
+		scope.Tagged(map[string]string{SignalTypeTag: signalTypeTagPause}).Counter(SchedulerSignalReceivedCountPerDomain).Inc(1)
 		if handlePause(logger, sig, state) {
 			stateChanged = true
 		}
@@ -189,7 +189,7 @@ func applyAllInputs(
 	selector.AddReceive(chs.unpause, func(c workflow.Channel, more bool) {
 		var sig UnpauseSignal
 		c.Receive(ctx, &sig)
-		scope.Tagged(map[string]string{SignalTypeTag: signalTypeTagUnpause}).Counter(SchedulerSignalReceivedCount).Inc(1)
+		scope.Tagged(map[string]string{SignalTypeTag: signalTypeTagUnpause}).Counter(SchedulerSignalReceivedCountPerDomain).Inc(1)
 		if handleUnpause(logger, sig, state) {
 			stateChanged = true
 		}
@@ -198,7 +198,7 @@ func applyAllInputs(
 	selector.AddReceive(chs.update, func(c workflow.Channel, more bool) {
 		var sig UpdateSignal
 		c.Receive(ctx, &sig)
-		scope.Tagged(map[string]string{SignalTypeTag: signalTypeTagUpdate}).Counter(SchedulerSignalReceivedCount).Inc(1)
+		scope.Tagged(map[string]string{SignalTypeTag: signalTypeTagUpdate}).Counter(SchedulerSignalReceivedCountPerDomain).Inc(1)
 		if handleUpdate(logger, sig, input, state) {
 			stateChanged = true
 		}
@@ -207,7 +207,7 @@ func applyAllInputs(
 	selector.AddReceive(chs.backfill, func(c workflow.Channel, more bool) {
 		var sig BackfillSignal
 		c.Receive(ctx, &sig)
-		scope.Tagged(map[string]string{SignalTypeTag: signalTypeTagBackfill}).Counter(SchedulerSignalReceivedCount).Inc(1)
+		scope.Tagged(map[string]string{SignalTypeTag: signalTypeTagBackfill}).Counter(SchedulerSignalReceivedCountPerDomain).Inc(1)
 		if handleBackfill(logger, sig, state) {
 			stateChanged = true
 		}
@@ -215,7 +215,7 @@ func applyAllInputs(
 
 	selector.AddReceive(chs.delete, func(c workflow.Channel, more bool) {
 		c.Receive(ctx, nil)
-		scope.Tagged(map[string]string{SignalTypeTag: signalTypeTagDelete}).Counter(SchedulerSignalReceivedCount).Inc(1)
+		scope.Tagged(map[string]string{SignalTypeTag: signalTypeTagDelete}).Counter(SchedulerSignalReceivedCountPerDomain).Inc(1)
 		state.Deleted = true
 	})
 
@@ -239,7 +239,7 @@ func drainBufferedSignals(
 	input *SchedulerWorkflowInput,
 ) bool {
 	if chs.delete.ReceiveAsync(nil) {
-		scope.Tagged(map[string]string{SignalTypeTag: signalTypeTagDelete}).Counter(SchedulerSignalReceivedCount).Inc(1)
+		scope.Tagged(map[string]string{SignalTypeTag: signalTypeTagDelete}).Counter(SchedulerSignalReceivedCountPerDomain).Inc(1)
 		state.Deleted = true
 		return false
 	}
@@ -250,7 +250,7 @@ func drainBufferedSignals(
 		if !chs.pause.ReceiveAsync(&sig) {
 			break
 		}
-		scope.Tagged(map[string]string{SignalTypeTag: signalTypeTagPause}).Counter(SchedulerSignalReceivedCount).Inc(1)
+		scope.Tagged(map[string]string{SignalTypeTag: signalTypeTagPause}).Counter(SchedulerSignalReceivedCountPerDomain).Inc(1)
 		if handlePause(logger, sig, state) {
 			stateChanged = true
 		}
@@ -260,7 +260,7 @@ func drainBufferedSignals(
 		if !chs.unpause.ReceiveAsync(&sig) {
 			break
 		}
-		scope.Tagged(map[string]string{SignalTypeTag: signalTypeTagUnpause}).Counter(SchedulerSignalReceivedCount).Inc(1)
+		scope.Tagged(map[string]string{SignalTypeTag: signalTypeTagUnpause}).Counter(SchedulerSignalReceivedCountPerDomain).Inc(1)
 		if handleUnpause(logger, sig, state) {
 			stateChanged = true
 		}
@@ -270,7 +270,7 @@ func drainBufferedSignals(
 		if !chs.update.ReceiveAsync(&sig) {
 			break
 		}
-		scope.Tagged(map[string]string{SignalTypeTag: signalTypeTagUpdate}).Counter(SchedulerSignalReceivedCount).Inc(1)
+		scope.Tagged(map[string]string{SignalTypeTag: signalTypeTagUpdate}).Counter(SchedulerSignalReceivedCountPerDomain).Inc(1)
 		if handleUpdate(logger, sig, input, state) {
 			stateChanged = true
 		}
@@ -280,7 +280,7 @@ func drainBufferedSignals(
 		if !chs.backfill.ReceiveAsync(&sig) {
 			break
 		}
-		scope.Tagged(map[string]string{SignalTypeTag: signalTypeTagBackfill}).Counter(SchedulerSignalReceivedCount).Inc(1)
+		scope.Tagged(map[string]string{SignalTypeTag: signalTypeTagBackfill}).Counter(SchedulerSignalReceivedCountPerDomain).Inc(1)
 		if handleBackfill(logger, sig, state) {
 			stateChanged = true
 		}
@@ -556,7 +556,12 @@ func processMissedRuns(ctx workflow.Context, logger *zap.Logger, scope tally.Sco
 	if state.Paused || watermark.IsZero() {
 		return false
 	}
-	now := workflow.Now(ctx)
+	return processMissedRunsAt(ctx, logger, scope, sched, input, state, watermark, workflow.Now(ctx))
+}
+
+// processMissedRunsAt is the testable core of processMissedRuns, accepting an explicit now
+// so the caller can inject a deterministic time without needing a workflow environment.
+func processMissedRunsAt(ctx workflow.Context, logger *zap.Logger, scope tally.Scope, sched cron.Schedule, input *SchedulerWorkflowInput, state *SchedulerWorkflowState, watermark, now time.Time) bool {
 	fires := computeMissedFireTimes(sched, watermark, now, input.Spec)
 	if len(fires.times) == 0 {
 		return false
@@ -583,13 +588,13 @@ func processMissedRuns(ctx workflow.Context, logger *zap.Logger, scope tally.Sco
 	unfired := int64(len(result.toFire) - fired)
 
 	if fired > 0 {
-		scope.Counter(SchedulerMissedFiredCount).Inc(int64(fired))
+		scope.Counter(SchedulerMissedFiredCountPerDomain).Inc(int64(fired))
 	}
 
 	policyStr := input.Policies.CatchUpPolicy.String()
 	if result.skipped > 0 {
 		scope.Tagged(map[string]string{CatchUpPolicyTag: policyStr}).
-			Counter(SchedulerMissedSkippedCount).Inc(result.skipped)
+			Counter(SchedulerMissedSkippedCountPerDomain).Inc(result.skipped)
 		state.SkippedRuns += result.skipped
 		logger.Info("catch-up skipped missed fires",
 			zap.Int64("skipped", result.skipped),
@@ -637,7 +642,7 @@ func processBackfills(ctx workflow.Context, logger *zap.Logger, scope tally.Scop
 					zap.Time("resumeFrom", t),
 					zap.Int("firedThisBatch", fired),
 				)
-				scope.Counter(SchedulerBackfillFiredCount).Inc(int64(fired))
+				scope.Counter(SchedulerBackfillFiredCountPerDomain).Inc(int64(fired))
 				return true
 			}
 			processScheduleFire(ctx, logger, input, state, t, TriggerSourceBackfill)
@@ -654,7 +659,7 @@ func processBackfills(ctx workflow.Context, logger *zap.Logger, scope tally.Scop
 				zap.String("backfillId", bf.BackfillID),
 				zap.Int("firedThisBatch", fired),
 			)
-			scope.Counter(SchedulerBackfillFiredCount).Inc(int64(fired))
+			scope.Counter(SchedulerBackfillFiredCountPerDomain).Inc(int64(fired))
 			return true
 		}
 
@@ -666,7 +671,7 @@ func processBackfills(ctx workflow.Context, logger *zap.Logger, scope tally.Scop
 	}
 
 	if fired > 0 {
-		scope.Counter(SchedulerBackfillFiredCount).Inc(int64(fired))
+		scope.Counter(SchedulerBackfillFiredCountPerDomain).Inc(int64(fired))
 	}
 
 	return false
@@ -700,7 +705,7 @@ func safeContinueAsNew(ctx workflow.Context, logger *zap.Logger, scope tally.Sco
 		logger.Info("schedule deleted (caught before ContinueAsNew)")
 		return nil
 	}
-	scope.Tagged(map[string]string{ReasonTag: cause}).Counter(SchedulerContinueAsNewCount).Inc(1)
+	scope.Tagged(map[string]string{ReasonTag: cause}).Counter(SchedulerContinueAsNewCountPerDomain).Inc(1)
 	state.Iterations = 0
 	input.State = *state
 	return workflow.NewContinueAsNewError(ctx, WorkflowTypeName, input)
