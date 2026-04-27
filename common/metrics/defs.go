@@ -1521,6 +1521,7 @@ const (
 	SchedulerWorkerScope
 	// SchedulerActivityScope is scope used by the scheduler fire activity
 	SchedulerActivityScope
+
 	NumWorkerScopes
 )
 
