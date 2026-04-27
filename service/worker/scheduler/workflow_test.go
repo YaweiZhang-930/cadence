@@ -873,7 +873,6 @@ func TestBackfillFireComputation(t *testing.T) {
 	}
 }
 
-<<<<<<< HEAD
 // TestProcessMissedRunsAtMetrics verifies that processMissedRunsAt emits
 // SchedulerMissedFiredCountPerDomain and SchedulerMissedSkippedCountPerDomain
 // with the correct values and tags for each catch-up policy.
@@ -991,7 +990,11 @@ func TestSafeContinueAsNewMetric(t *testing.T) {
 			c, ok := findCounter(scope.Snapshot().Counters(), SchedulerContinueAsNewCountPerDomain, map[string]string{ReasonTag: tt.reason})
 			require.True(t, ok, "CAN metric should be emitted with reason=%s", tt.reason)
 			assert.Equal(t, int64(1), c.Value())
-=======
+
+		})
+	}
+}
+
 func TestBuildScheduleSearchAttributes(t *testing.T) {
 	tests := []struct {
 		name  string
@@ -1097,7 +1100,6 @@ func TestBuildScheduleSearchAttributes(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			got := buildScheduleSearchAttributes(tt.input, tt.state)
 			assert.Equal(t, tt.want, got)
->>>>>>> b961f6d2b (feat(schedules): enrich ListSchedules with cron and workflow type (#8003))
 		})
 	}
 }
