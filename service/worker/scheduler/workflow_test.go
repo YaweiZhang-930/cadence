@@ -963,12 +963,12 @@ func TestProcessMissedRunsAtMetrics(t *testing.T) {
 // noopChannel is a workflow.Channel whose ReceiveAsync always returns false (no pending signal).
 type noopChannel struct{}
 
-func (c *noopChannel) Receive(_ workflow.Context, _ interface{}) bool        { return false }
-func (c *noopChannel) ReceiveAsync(_ interface{}) bool                       { return false }
-func (c *noopChannel) ReceiveAsyncWithMoreFlag(_ interface{}) (bool, bool)   { return false, false }
-func (c *noopChannel) Send(_ workflow.Context, _ interface{})                {}
-func (c *noopChannel) SendAsync(_ interface{}) bool                          { return false }
-func (c *noopChannel) Close()                                                {}
+func (c *noopChannel) Receive(_ workflow.Context, _ interface{}) bool      { return false }
+func (c *noopChannel) ReceiveAsync(_ interface{}) bool                     { return false }
+func (c *noopChannel) ReceiveAsyncWithMoreFlag(_ interface{}) (bool, bool) { return false, false }
+func (c *noopChannel) Send(_ workflow.Context, _ interface{})              {}
+func (c *noopChannel) SendAsync(_ interface{}) bool                        { return false }
+func (c *noopChannel) Close()                                              {}
 
 func TestSafeContinueAsNewMetric(t *testing.T) {
 	tests := []struct {
