@@ -803,6 +803,33 @@ func TestProcessBackfillsRespectsPause(t *testing.T) {
 	assert.Empty(t, scope.Snapshot().Counters(), "no metrics should be emitted when paused")
 }
 
+func TestProcessBackfillsFiredMetric(t *testing.T) {
+	sched := mustParseCron(t, "0 * * * *")
+	// Backfill window [10:00, 12:00] produces 3 fires: 10:00, 11:00, 12:00
+	input := &SchedulerWorkflowInput{
+		Spec: types.ScheduleSpec{CronExpression: "0 * * * *"},
+		// Action.StartWorkflow intentionally nil: processScheduleFire returns
+		// early before using ctx, so nil ctx is safe here.
+	}
+	state := &SchedulerWorkflowState{
+		PendingBackfills: []BackfillRequest{
+			{
+				StartTime:  time.Date(2026, 1, 15, 10, 0, 0, 0, time.UTC),
+				EndTime:    time.Date(2026, 1, 15, 12, 0, 0, 0, time.UTC),
+				BackfillID: "bf-1",
+			},
+		},
+	}
+	scope := tally.NewTestScope("", nil)
+	moreWork := processBackfills(nil, testLogger, scope, sched, input, state)
+	assert.False(t, moreWork)
+	assert.Empty(t, state.PendingBackfills, "completed backfill should be removed")
+
+	c, ok := findCounter(scope.Snapshot().Counters(), SchedulerBackfillFiredCountPerDomain, map[string]string{})
+	require.True(t, ok, "backfill fired metric should be emitted")
+	assert.Equal(t, int64(3), c.Value(), "expected 3 fires: 10:00, 11:00, 12:00")
+}
+
 func TestBackfillFireComputation(t *testing.T) {
 	sched := mustParseCron(t, "0 * * * *")
 
@@ -859,12 +886,11 @@ func TestProcessMissedRunsAtMetrics(t *testing.T) {
 	now := time.Date(2026, 1, 15, 14, 0, 0, 0, time.UTC)
 
 	tests := []struct {
-		name          string
-		policy        types.ScheduleCatchUpPolicy
-		window        time.Duration
-		wantFired     int64
-		wantSkipped   int64
-		wantMoreWork  bool
+		name        string
+		policy      types.ScheduleCatchUpPolicy
+		window      time.Duration
+		wantFired   int64
+		wantSkipped int64
 	}{
 		{
 			name:        "Skip - all 4 fires skipped, skipped metric emitted with SKIP tag",
