@@ -1369,6 +1369,20 @@ func (mr *MockMutableStateMockRecorder) GetPendingRequestCancelExternalInfos() *
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPendingRequestCancelExternalInfos", reflect.TypeOf((*MockMutableState)(nil).GetPendingRequestCancelExternalInfos))
 }
 
+// GetPendingSemaphoreInfos mocks base method.
+func (m *MockMutableState) GetPendingSemaphoreInfos() map[int64]*persistence.SemaphoreInfo {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetPendingSemaphoreInfos")
+	ret0, _ := ret[0].(map[int64]*persistence.SemaphoreInfo)
+	return ret0
+}
+
+// GetPendingSemaphoreInfos indicates an expected call of GetPendingSemaphoreInfos.
+func (mr *MockMutableStateMockRecorder) GetPendingSemaphoreInfos() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPendingSemaphoreInfos", reflect.TypeOf((*MockMutableState)(nil).GetPendingSemaphoreInfos))
+}
+
 // GetPendingSignalExternalInfos mocks base method.
 func (m *MockMutableState) GetPendingSignalExternalInfos() map[int64]*persistence.SignalInfo {
 	m.ctrl.T.Helper()
@@ -1452,6 +1466,21 @@ func (m *MockMutableState) GetRetryBackoffDuration(errReason string) time.Durati
 func (mr *MockMutableStateMockRecorder) GetRetryBackoffDuration(errReason any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRetryBackoffDuration", reflect.TypeOf((*MockMutableState)(nil).GetRetryBackoffDuration), errReason)
+}
+
+// GetSemaphoreInfo mocks base method.
+func (m *MockMutableState) GetSemaphoreInfo(arg0 int64) (*persistence.SemaphoreInfo, bool) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetSemaphoreInfo", arg0)
+	ret0, _ := ret[0].(*persistence.SemaphoreInfo)
+	ret1, _ := ret[1].(bool)
+	return ret0, ret1
+}
+
+// GetSemaphoreInfo indicates an expected call of GetSemaphoreInfo.
+func (mr *MockMutableStateMockRecorder) GetSemaphoreInfo(arg0 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSemaphoreInfo", reflect.TypeOf((*MockMutableState)(nil).GetSemaphoreInfo), arg0)
 }
 
 // GetSignalInfo mocks base method.

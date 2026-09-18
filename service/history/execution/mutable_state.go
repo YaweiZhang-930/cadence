@@ -143,10 +143,12 @@ type (
 		GetPendingTimerInfos() map[string]*persistence.TimerInfo
 		GetPendingChildExecutionInfos() map[int64]*persistence.ChildExecutionInfo
 		GetPendingRequestCancelExternalInfos() map[int64]*persistence.RequestCancelInfo
+		GetPendingSemaphoreInfos() map[int64]*persistence.SemaphoreInfo
 		GetPendingSignalExternalInfos() map[int64]*persistence.SignalInfo
 		GetRequestCancelInfo(int64) (*persistence.RequestCancelInfo, bool)
 		GetRetryBackoffDuration(errReason string) time.Duration
 		GetCronBackoffDuration(context.Context) (time.Duration, error)
+		GetSemaphoreInfo(int64) (*persistence.SemaphoreInfo, bool)
 		GetSignalInfo(int64) (*persistence.SignalInfo, bool)
 		GetStartVersion() (int64, error)
 		GetUserTimerInfoByEventID(int64) (*persistence.TimerInfo, bool)
